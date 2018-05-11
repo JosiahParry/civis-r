@@ -27,6 +27,16 @@ add_schemas <- function(dbs) {
     select(-schema_url)
 }
 
+add_tables <- function(dbs) {
+  dbs %>%
+    mutate(table_url = paste(base_url(), "databases", db_id, "tables",
+                             glue::glue("?name={schema}"), sep = "/")) %>%
+    mutate(tables = map(table_url, get_civis_api)) %>%
+    select(-table_url) %>%
+    return()
+}
+
+
 # create a pipeable function that provides a database of tables based on provided schema names
 # This is intended to come from either db or schema
 
@@ -37,7 +47,7 @@ get_civis_api <- function(url) {
   httr::RETRY("GET", url = url,
               authenticate(api_key(), "")) %>%
     httr::content(type = "text") %>%
-    jsonlite::fromJSON() %>% as_tibble()
+    jsonlite::fromJSON() %>% jsonlite::flatten() %>%  as_tibble()
 
 }
 
